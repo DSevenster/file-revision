@@ -1,12 +1,19 @@
 import os
 import re
 
+# Set directory path (absolute or relative if nested in revision_app directory
 directory_path = "revisions"
 
 
 def ingest_files(
     directory_path: str = "revisions",
 ) -> dict[str, dict[str, str]]:
+    """
+    Ingests .py files in a given directory provided they conform to the following
+    content structure:
+    'revision_id = '<text>''
+    'revises_id = '<text>''
+    """
     ingested_files = {}
 
     try:
@@ -34,6 +41,11 @@ def ingest_files(
 
 
 def content_extraction(content_line: str) -> str:
+    """
+    Extracts the vale from a given string '= ' and encapsulated in
+    ''. If not found, returns None
+
+    """
     match = re.search(r"= '(.*)'", content_line)
     if match:
         id_value = match.group(1)
@@ -44,6 +56,14 @@ def content_extraction(content_line: str) -> str:
 
 
 def determine_revision_sequence(ingested_files: dict) -> list:
+    """
+    Determines the file sequence using the following method:
+    - Determine first file where `revises_id` is None
+
+    Takes revision_id from that file
+    Determine where revision_id matches revises_id.
+    On match, we take the new revision_id and repeat
+    """
     file_sequence = []
     first_file = next(
         filename
@@ -74,6 +94,9 @@ def determine_revision_sequence(ingested_files: dict) -> list:
 
 
 def rename_files(file_sequence: list, directory_path: str):
+    """
+    Renames files based on the given sequence using the index as numbering, starting at `1`
+    """
     for index, filename in enumerate(file_sequence, start=1):
         try:
             corrected_filename = f"{index}_{filename}"
